@@ -9,7 +9,7 @@ import {
   type StorefrontClientProps,
 } from '@shopify/hydrogen-react';
 import type {WritableDeep} from 'type-fest';
-import {fetchWithServerCache, checkGraphQLErrors} from './cache/server-fetch';
+import {fetchWithServerCache} from './cache/server-fetch';
 import {
   SDK_VARIANT_HEADER,
   SDK_VARIANT_SOURCE_HEADER,
@@ -194,7 +194,7 @@ type StorefrontMutationOptions = StorefrontCommonExtraParams & {
 const defaultI18n: I18nBase = {language: 'EN', country: 'US'};
 
 /**
- *  This function extends `createStorefrontClient` from [Hydrogen React](/docs/api/hydrogen-react/2024-07/utilities/createstorefrontclient). The additional arguments enable internationalization (i18n), caching, and other features particular to Remix and Oxygen.
+ *  This function extends `createStorefrontClient` from [Hydrogen React](/docs/api/hydrogen-react/2024-10/utilities/createstorefrontclient). The additional arguments enable internationalization (i18n), caching, and other features particular to Remix and Oxygen.
  *
  *  Learn more about [data fetching in Hydrogen](/docs/custom-storefronts/hydrogen/data-fetching/fetch-data).
  */
@@ -316,8 +316,11 @@ export function createStorefrontClient<TI18n extends I18nBase>(
       cacheInstance: mutation ? undefined : cache,
       cache: cacheOptions || CacheDefault(),
       cacheKey,
-      shouldCacheResponse: checkGraphQLErrors,
       waitUntil,
+      // Check if the response body has GraphQL errors:
+      // https://spec.graphql.org/June2018/#sec-Response-Format
+      shouldCacheResponse: (body: any) => !body?.errors,
+      // Optional information for the subrequest profiler:
       debugInfo: {
         requestId: requestInit.headers[STOREFRONT_REQUEST_GROUP_ID_HEADER],
         displayName,
@@ -343,10 +346,14 @@ export function createStorefrontClient<TI18n extends I18nBase>(
        * We try both and conform them to a single {errors} format.
        */
       let errors;
+      let bodyText = body;
       try {
-        errors = parseJSON(body);
+        bodyText ??= await response.text();
+        errors = parseJSON(bodyText);
       } catch (_e) {
-        errors = [{message: body}];
+        errors = [
+          {message: bodyText ?? 'Could not parse Storefront API response'},
+        ];
       }
 
       throwErrorWithGqlLink({...errorOptions, errors});
@@ -484,29 +491,29 @@ export type StorefrontForDoc<TI18n extends I18nBase = I18nBase> = {
   ) => Promise<TData & StorefrontError>;
   /** The cache instance passed in from the `createStorefrontClient` argument. */
   cache?: Cache;
-  /** Re-export of [`CacheNone`](/docs/api/hydrogen/2024-07/utilities/cachenone). */
+  /** Re-export of [`CacheNone`](/docs/api/hydrogen/2024-10/utilities/cachenone). */
   CacheNone?: typeof CacheNone;
-  /** Re-export of [`CacheLong`](/docs/api/hydrogen/2024-07/utilities/cachelong). */
+  /** Re-export of [`CacheLong`](/docs/api/hydrogen/2024-10/utilities/cachelong). */
   CacheLong?: typeof CacheLong;
-  /** Re-export of [`CacheShort`](/docs/api/hydrogen/2024-07/utilities/cacheshort). */
+  /** Re-export of [`CacheShort`](/docs/api/hydrogen/2024-10/utilities/cacheshort). */
   CacheShort?: typeof CacheShort;
-  /** Re-export of [`CacheCustom`](/docs/api/hydrogen/2024-07/utilities/cachecustom). */
+  /** Re-export of [`CacheCustom`](/docs/api/hydrogen/2024-10/utilities/cachecustom). */
   CacheCustom?: typeof CacheCustom;
-  /** Re-export of [`generateCacheControlHeader`](/docs/api/hydrogen/2024-07/utilities/generatecachecontrolheader). */
+  /** Re-export of [`generateCacheControlHeader`](/docs/api/hydrogen/2024-10/utilities/generatecachecontrolheader). */
   generateCacheControlHeader?: typeof generateCacheControlHeader;
-  /** Returns an object that contains headers that are needed for each query to Storefront API GraphQL endpoint. See [`getPublicTokenHeaders` in Hydrogen React](/docs/api/hydrogen-react/2024-07/utilities/createstorefrontclient#:~:text=%27graphql%27.-,getPublicTokenHeaders,-(props%3F%3A) for more details. */
+  /** Returns an object that contains headers that are needed for each query to Storefront API GraphQL endpoint. See [`getPublicTokenHeaders` in Hydrogen React](/docs/api/hydrogen-react/2024-10/utilities/createstorefrontclient#:~:text=%27graphql%27.-,getPublicTokenHeaders,-(props%3F%3A) for more details. */
   getPublicTokenHeaders?: ReturnType<
     typeof createStorefrontUtilities
   >['getPublicTokenHeaders'];
-  /** Returns an object that contains headers that are needed for each query to Storefront API GraphQL endpoint for API calls made from a server. See [`getPrivateTokenHeaders` in  Hydrogen React](/docs/api/hydrogen-react/2024-07/utilities/createstorefrontclient#:~:text=storefrontApiVersion-,getPrivateTokenHeaders,-(props%3F%3A) for more details.*/
+  /** Returns an object that contains headers that are needed for each query to Storefront API GraphQL endpoint for API calls made from a server. See [`getPrivateTokenHeaders` in  Hydrogen React](/docs/api/hydrogen-react/2024-10/utilities/createstorefrontclient#:~:text=storefrontApiVersion-,getPrivateTokenHeaders,-(props%3F%3A) for more details.*/
   getPrivateTokenHeaders?: ReturnType<
     typeof createStorefrontUtilities
   >['getPrivateTokenHeaders'];
-  /** Creates the fully-qualified URL to your myshopify.com domain. See [`getShopifyDomain` in  Hydrogen React](/docs/api/hydrogen-react/2024-07/utilities/createstorefrontclient#:~:text=StorefrontClientReturn-,getShopifyDomain,-(props%3F%3A) for more details. */
+  /** Creates the fully-qualified URL to your myshopify.com domain. See [`getShopifyDomain` in  Hydrogen React](/docs/api/hydrogen-react/2024-10/utilities/createstorefrontclient#:~:text=StorefrontClientReturn-,getShopifyDomain,-(props%3F%3A) for more details. */
   getShopifyDomain?: ReturnType<
     typeof createStorefrontUtilities
   >['getShopifyDomain'];
-  /** Creates the fully-qualified URL to your store's GraphQL endpoint. See [`getStorefrontApiUrl` in  Hydrogen React](/docs/api/hydrogen-react/2024-07/utilities/createstorefrontclient#:~:text=storeDomain-,getStorefrontApiUrl,-(props%3F%3A) for more details.*/
+  /** Creates the fully-qualified URL to your store's GraphQL endpoint. See [`getStorefrontApiUrl` in  Hydrogen React](/docs/api/hydrogen-react/2024-10/utilities/createstorefrontclient#:~:text=storeDomain-,getStorefrontApiUrl,-(props%3F%3A) for more details.*/
   getApiUrl?: ReturnType<
     typeof createStorefrontUtilities
   >['getStorefrontApiUrl'];

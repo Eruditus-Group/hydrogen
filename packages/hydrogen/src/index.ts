@@ -116,10 +116,6 @@ export {
   type CustomEventMap,
   type CustomerPrivacyApiProps,
   useCustomerPrivacy,
-  /*
-    @deprecated use useAnalytics or useCustomerPrivacy instead
-  */
-  getCustomerPrivacy,
 } from './customer-privacy/ShopifyCustomerPrivacy';
 
 export {
@@ -144,6 +140,8 @@ export {
   useMoney,
   useShopifyCookies,
   Video,
+  isOptionValueCombinationInEncodedVariant,
+  decodeEncodedVariant,
 } from '@shopify/hydrogen-react';
 export {RichText} from './RichText';
 
@@ -173,7 +171,4 @@ export {
   type HydrogenContext,
 } from './createHydrogenContext';
 
-export {
-  getSitemapIndex as unstable__getSitemapIndex,
-  getSitemap as unstable__getSitemap,
-} from './sitemap/sitemap';
+export {getSitemapIndex, getSitemap} from './sitemap/sitemap';
