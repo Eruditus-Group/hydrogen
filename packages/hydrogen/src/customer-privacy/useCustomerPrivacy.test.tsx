@@ -12,8 +12,7 @@ let body: HTMLBodyElement;
 
 const CUSTOMER_PRIVACY_PROPS = {
   checkoutDomain: 'checkout.shopify.com',
-  storefrontAccessToken: '3b580e70970c4528da70c98e097c2fa0',
-  withPrivacyBanner: true,
+  storefrontAccessToken: 'test-token',
 };
 
 describe(`useCustomerPrivacy`, () => {
@@ -43,22 +42,22 @@ describe(`useCustomerPrivacy`, () => {
     document.querySelectorAll('script').forEach((node) => node.remove());
   });
 
-  it('By default, loads just the customerPrivacy script', () => {
-    renderHook(() =>
-      useCustomerPrivacy({
-        checkoutDomain: 'checkout.shopify.com',
-        storefrontAccessToken: '3b580e70970c4528da70c98e097c2fa0',
-      }),
-    );
-    const script = html.querySelector('body script');
-    expect(script).toContainHTML(`src="${CONSENT_API}"`);
-    expect(script).toContainHTML('type="text/javascript"');
-  });
-
   it('loads the customerPrivacy with privacyBanner script', () => {
     renderHook(() => useCustomerPrivacy(CUSTOMER_PRIVACY_PROPS));
     const script = html.querySelector('body script');
     expect(script).toContainHTML(`src="${CONSENT_API_WITH_BANNER}"`);
+    expect(script).toContainHTML('type="text/javascript"');
+  });
+
+  it('loads just the customerPrivacy script', () => {
+    renderHook(() =>
+      useCustomerPrivacy({
+        ...CUSTOMER_PRIVACY_PROPS,
+        withPrivacyBanner: false,
+      }),
+    );
+    const script = html.querySelector('body script');
+    expect(script).toContainHTML(`src="${CONSENT_API}"`);
     expect(script).toContainHTML('type="text/javascript"');
   });
 
@@ -76,7 +75,10 @@ describe(`useCustomerPrivacy`, () => {
   it('returns both customerPrivacy and privacyBanner initially as null', async () => {
     let cp;
     renderHook(() => {
-      cp = useCustomerPrivacy(CUSTOMER_PRIVACY_PROPS);
+      cp = useCustomerPrivacy({
+        ...CUSTOMER_PRIVACY_PROPS,
+        withPrivacyBanner: true,
+      });
     });
 
     // Wait until idle

@@ -99,6 +99,7 @@ export default class Dev extends Command {
     }),
 
     // For the classic compiler:
+    worker: deprecated('--worker', {isBoolean: true}),
     ...overrideFlag(commonFlags.legacyRuntime, {
       'legacy-runtime': {
         description:

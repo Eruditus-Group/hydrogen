@@ -22,8 +22,6 @@ const docsToCopy = [
   'parseGid',
   'Storefront Schema',
   'Storefront API Types',
-  'decodeEncodedVariant',
-  'isOptionValueCombinationInEncodedVariant',
 ];
 
 async function copyFiles() {

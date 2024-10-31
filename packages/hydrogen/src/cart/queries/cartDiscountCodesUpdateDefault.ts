@@ -1,9 +1,5 @@
 import {StorefrontApiErrors, formatAPIResult} from '../../storefront';
-import {
-  CART_WARNING_FRAGMENT,
-  MINIMAL_CART_FRAGMENT,
-  USER_ERROR_FRAGMENT,
-} from './cart-fragments';
+import {MINIMAL_CART_FRAGMENT, USER_ERROR_FRAGMENT} from './cart-fragments';
 import type {
   CartOptionalInput,
   CartQueryData,
@@ -56,12 +52,8 @@ export const CART_DISCOUNT_CODE_UPDATE_MUTATION = (
       userErrors {
         ...CartApiError
       }
-      warnings {
-        ...CartApiWarning
-      }
     }
   }
   ${cartFragment}
   ${USER_ERROR_FRAGMENT}
-  ${CART_WARNING_FRAGMENT}
 `;

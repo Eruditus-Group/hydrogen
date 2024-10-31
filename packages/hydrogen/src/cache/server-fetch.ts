@@ -5,23 +5,18 @@ import {
   type DebugOptions,
 } from './run-with-cache.js';
 import type {WaitUntil} from '../types.js';
-import {parseJSON} from '../utils/parse-json.js';
 
-export type FetchCacheOptions<T = any> = {
+export type FetchCacheOptions = {
   cache?: CachingStrategy;
   cacheInstance?: Cache;
   cacheKey?: CacheKey;
-  shouldCacheResponse: (body: T, response: Response) => boolean;
+  shouldCacheResponse?: (body: any, response: Response) => boolean;
   waitUntil?: WaitUntil;
+  returnType?: 'json' | 'text' | 'arrayBuffer' | 'blob';
   debugInfo?: DebugOptions;
 };
 
-type SerializableResponse = [any, ResponseInit];
-
-function toSerializableResponse(
-  body: any,
-  response: Response,
-): SerializableResponse {
+function toSerializableResponse(body: any, response: Response) {
   return [
     body,
     {
@@ -29,30 +24,36 @@ function toSerializableResponse(
       statusText: response.statusText,
       headers: Array.from(response.headers.entries()),
     },
-  ];
+  ] satisfies [any, ResponseInit];
 }
 
-function fromSerializableResponse([body, init]: SerializableResponse) {
+function fromSerializableResponse([body, init]: [any, ResponseInit]) {
   return [body, new Response(body, init)] as const;
 }
+
+// Check if the response body has GraphQL errors
+// https://spec.graphql.org/June2018/#sec-Response-Format
+export const checkGraphQLErrors = (body: any, response: Response) =>
+  !body?.errors && response.status < 400;
 
 /**
  * `fetch` equivalent that stores responses in cache.
  * Useful for calling third-party APIs that need to be cached.
  * @private
  */
-export async function fetchWithServerCache<T = unknown>(
+export async function fetchWithServerCache(
   url: string,
   requestInit: Request | RequestInit,
   {
     cacheInstance,
     cache: cacheOptions,
     cacheKey = [url, requestInit],
-    shouldCacheResponse,
+    shouldCacheResponse = () => true,
     waitUntil,
+    returnType = 'json',
     debugInfo,
-  }: FetchCacheOptions,
-): Promise<readonly [T, Response]> {
+  }: FetchCacheOptions = {},
+): Promise<readonly [any, Response]> {
   if (!cacheOptions && (!requestInit.method || requestInit.method === 'GET')) {
     cacheOptions = CacheShort();
   }
@@ -61,16 +62,18 @@ export async function fetchWithServerCache<T = unknown>(
     cacheKey,
     async () => {
       const response = await fetch(url, requestInit);
-      if (!response.ok) {
-        // Skip caching and consuming the response body
-        return response;
-      }
-
-      let data: any = await response.text().catch(() => '');
+      let data;
 
       try {
-        if (data) data = parseJSON(data);
-      } catch {}
+        data = await response[returnType]();
+      } catch {
+        try {
+          data = await response.text();
+        } catch {
+          // Getting a response without a valid body
+          return toSerializableResponse('', response);
+        }
+      }
 
       return toSerializableResponse(data, response);
     },
@@ -79,15 +82,8 @@ export async function fetchWithServerCache<T = unknown>(
       waitUntil,
       strategy: cacheOptions ?? null,
       debugInfo,
-      shouldCacheResult: (payload) => {
-        return 'ok' in payload
-          ? false
-          : shouldCacheResponse(...fromSerializableResponse(payload));
-      },
+      shouldCacheResult: (result) =>
+        shouldCacheResponse(...fromSerializableResponse(result)),
     },
-  ).then((payload) => {
-    return 'ok' in payload
-      ? ([null, payload] as const)
-      : fromSerializableResponse(payload);
-  });
+  ).then(fromSerializableResponse);
 }
