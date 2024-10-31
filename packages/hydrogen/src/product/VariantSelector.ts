@@ -2,27 +2,18 @@ import {useLocation, useNavigation} from '@remix-run/react';
 import {flattenConnection} from '@shopify/hydrogen-react';
 import type {
   ProductOption,
-  ProductOptionValue,
   ProductVariant,
   ProductVariantConnection,
   SelectedOptionInput,
 } from '@shopify/hydrogen-react/storefront-api-types';
 import {type ReactNode, useMemo, createElement, Fragment} from 'react';
 import type {PartialDeep} from 'type-fest';
-import {warnOnce} from '../utils/warning';
 
 export type VariantOption = {
   name: string;
   value?: string;
   values: Array<VariantOptionValue>;
 };
-
-type PartialProductOptionValues = PartialDeep<ProductOptionValue>;
-type PartialProductOption = PartialDeep<
-  Omit<ProductOption, 'optionValues'> & {
-    optionValues: Array<PartialProductOptionValues>;
-  }
->;
 
 export type VariantOptionValue = {
   value: string;
@@ -31,15 +22,14 @@ export type VariantOptionValue = {
   search: string;
   isActive: boolean;
   variant?: PartialDeep<ProductVariant>;
-  optionValue: PartialProductOptionValues;
 };
 
 type VariantSelectorProps = {
   /** The product handle for all of the variants */
   handle: string;
-  /** Product options from the [Storefront API](/docs/api/storefront/2024-10/objects/ProductOption). Make sure both `name` and `values` are a part of your query. */
-  options: Array<PartialProductOption> | undefined;
-  /** Product variants from the [Storefront API](/docs/api/storefront/2024-10/objects/ProductVariant). You only need to pass this prop if you want to show product availability. If a product option combination is not found within `variants`, it is assumed to be available. Make sure to include `availableForSale` and `selectedOptions.name` and `selectedOptions.value`. */
+  /** Product options from the [Storefront API](/docs/api/storefront/2024-07/objects/ProductOption). Make sure both `name` and `values` are apart of your query. */
+  options: Array<PartialDeep<ProductOption>> | undefined;
+  /** Product variants from the [Storefront API](/docs/api/storefront/2024-07/objects/ProductVariant). You only need to pass this prop if you want to show product availability. If a product option combination is not found within `variants`, it is assumed to be available. Make sure to include `availableForSale` and `selectedOptions.name` and `selectedOptions.value`. */
   variants?:
     | PartialDeep<ProductVariantConnection>
     | Array<PartialDeep<ProductVariant>>;
@@ -52,29 +42,12 @@ type VariantSelectorProps = {
 
 export function VariantSelector({
   handle,
-  options: _options = [],
+  options = [],
   variants: _variants = [],
   productPath = 'products',
   waitForNavigation = false,
   children,
 }: VariantSelectorProps) {
-  // Deprecation notice for product.options.values
-  // TODO: Remove this after product.options.values is removed from the Storefront API
-  let options = _options;
-  if (options[0]?.values) {
-    warnOnce(
-      '[h2:warn:VariantSelector] product.options.values is deprecated. Use product.options.optionValues instead.',
-    );
-
-    if (!!options[0] && !options[0].optionValues) {
-      // Convert the old values format to the new optionValues format
-      options = _options.map((option) => ({
-        ...option,
-        optionValues: option.values?.map((value) => ({name: value})) || [],
-      }));
-    }
-  }
-
   const variants =
     _variants instanceof Array ? _variants : flattenConnection(_variants);
 
@@ -88,7 +61,7 @@ export function VariantSelector({
   // But instead it always needs to be added to the product options so
   // the SFAPI properly finds the variant
   const optionsWithOnlyOneValue = options.filter(
-    (option) => option?.optionValues?.length === 1,
+    (option) => option?.values?.length === 1,
   );
 
   return createElement(
@@ -99,22 +72,18 @@ export function VariantSelector({
         let activeValue;
         let availableValues: VariantOptionValue[] = [];
 
-        for (let value of option.optionValues!) {
+        for (let value of option.values!) {
           // The clone the search params for each value, so we can calculate
           // a new URL for each option value pair
           const clonedSearchParams = new URLSearchParams(
             alreadyOnProductPage ? searchParams : undefined,
           );
-          clonedSearchParams.set(option.name!, value.name!);
+          clonedSearchParams.set(option.name!, value!);
 
           // Because we hide options with only one value, they aren't selectable,
           // but they still need to get into the URL
           optionsWithOnlyOneValue.forEach((option) => {
-            if (option.optionValues![0]!.name)
-              clonedSearchParams.set(
-                option.name!,
-                option.optionValues![0]!.name,
-              );
+            clonedSearchParams.set(option.name!, option.values![0]!);
           });
 
           // Find a variant that matches all selected options.
@@ -130,20 +99,19 @@ export function VariantSelector({
 
           const calculatedActiveValue = currentParam
             ? // If a URL parameter exists for the current option, check if it equals the current value
-              currentParam === value.name!
+              currentParam === value!
             : false;
 
           if (calculatedActiveValue) {
             // Save out the current value if it's active. This should only ever happen once.
             // Should we throw if it happens a second time?
-            activeValue = value.name!;
+            activeValue = value;
           }
 
           const searchString = '?' + clonedSearchParams.toString();
 
           availableValues.push({
-            value: value.name!,
-            optionValue: value,
+            value: value!,
             isAvailable: variant ? variant.availableForSale! : true,
             to: path + searchString,
             search: searchString,

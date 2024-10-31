@@ -127,7 +127,7 @@ function logMissingConfig(fieldName: string) {
 
 export function useCustomerPrivacy(props: CustomerPrivacyApiProps) {
   const {
-    withPrivacyBanner = false,
+    withPrivacyBanner = true,
     onVisitorConsentCollected,
     onReady,
     ...consentConfig

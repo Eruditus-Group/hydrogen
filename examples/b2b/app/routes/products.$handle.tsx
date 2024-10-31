@@ -338,9 +338,7 @@ const PRODUCT_FRAGMENT = `#graphql
     description
     options {
       name
-      optionValues {
-        name
-      }
+      values
     }
     selectedVariant: variantBySelectedOptions(selectedOptions: $selectedOptions, ignoreUnknownOptions: true, caseInsensitiveMatch: true) {
       ...ProductVariant

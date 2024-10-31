@@ -14,6 +14,10 @@ describe('<ProductPrice />', () => {
       expect(
         screen.getByText(variant?.price?.amount || '', {exact: false}),
       ).toBeInTheDocument();
+
+      expect(
+        screen.getByText(variant?.priceV2?.amount || '', {exact: false}),
+      ).toBeInTheDocument();
     });
 
     it("renders <Money /> with the variant's minimum compareAt price", () => {
@@ -44,6 +48,12 @@ describe('<ProductPrice />', () => {
 
       expect(
         screen.getByText(variant?.compareAtPrice?.amount || '', {
+          exact: false,
+        }),
+      ).toBeInTheDocument();
+
+      expect(
+        screen.getByText(variant?.compareAtPriceV2?.amount || '', {
           exact: false,
         }),
       ).toBeInTheDocument();

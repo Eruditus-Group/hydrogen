@@ -369,7 +369,7 @@
           "type": "option"
         },
         "preview": {
-          "description": "Deploys to the Preview environment.",
+          "description": "Deploys to the Preview environment. Overrides --env-branch and Git metadata.",
           "name": "preview",
           "required": false,
           "allowNo": false,
@@ -667,6 +667,11 @@
           "env": "SHOPIFY_HYDROGEN_FLAG_DISABLE_DEPS_OPTIMIZER",
           "name": "disable-deps-optimizer",
           "allowNo": false,
+          "type": "boolean"
+        },
+        "worker": {
+          "hidden": true,
+          "name": "worker",
           "type": "boolean"
         },
         "legacy-runtime": {
@@ -1318,6 +1323,11 @@
           "multiple": false,
           "type": "option"
         },
+        "worker": {
+          "hidden": true,
+          "name": "worker",
+          "type": "boolean"
+        },
         "legacy-runtime": {
           "description": "Runs the app in a Node.js sandbox instead of an Oxygen worker.",
           "env": "SHOPIFY_HYDROGEN_FLAG_LEGACY_RUNTIME",
@@ -1748,5 +1758,5 @@
       ]
     }
   },
-  "version": "9.0.2"
+  "version": "8.4.6"
 }

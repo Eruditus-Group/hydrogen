@@ -14,11 +14,7 @@ import {commonFlags, flagsToCamelObject} from '../../lib/flags.js';
 import {prepareDiffDirectory} from '../../lib/template-diff.js';
 import {getViteConfig, isViteProject} from '../../lib/vite-config.js';
 import {checkLockfileStatus} from '../../lib/check-lockfile.js';
-import {
-  findMissingRoutes,
-  findReservedRoutes,
-  warnReservedRoutes,
-} from '../../lib/route-validator.js';
+import {findMissingRoutes} from '../../lib/missing-routes.js';
 import {runClassicCompilerBuild} from '../../lib/classic-compiler/build.js';
 import {hydrogenBundleAnalyzer} from '../../lib/bundle/vite-plugin.js';
 import {
@@ -343,10 +339,6 @@ export async function runBuild({
           }. For more details, run \`${exec} shopify hydrogen check routes\`.\n`,
       );
     }
-  }
-
-  if (!watch && !disableRouteWarning) {
-    warnReservedRoutes(findReservedRoutes(remixConfig));
   }
 
   return {

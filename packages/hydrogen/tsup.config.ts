@@ -73,7 +73,7 @@ export default defineConfig([
     outDir: 'dist/vite',
     format: 'esm',
     minify: false,
-    bundle: true,
+    bundle: false,
     sourcemap: false,
     dts: true,
   },
